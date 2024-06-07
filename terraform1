@@ -1,0 +1,91 @@
+# Define AWS provider
+provider "aws" {
+  region = "us-east-1"  # Specify your desired AWS region
+}
+
+# Create an EC2 instance
+resource "aws_instance" "example_ec2" {
+  ami           = "ami-12345678"  # Specify the ID of the Amazon Machine Image (AMI) for your EC2 instance
+  instance_type = "t2.micro"      # Specify the instance type (e.g., t2.micro, t3.large, etc.)
+  key_name      = "your-keypair"  # Specify the name of your EC2 key pair
+  subnet_id     = "subnet-123456" # Specify the subnet ID where you want to launch the EC2 instance
+
+  tags = {
+    Name = "ExampleEC2Instance"  # Specify a name tag for your EC2 instance
+  }
+}
+
+# Create an ECS cluster
+resource "aws_ecs_cluster" "example_cluster" {
+  name = "example-cluster"  # Specify the name for your ECS cluster
+}
+
+# Create a Lambda function
+resource "aws_lambda_function" "example_lambda" {
+  function_name = "example-lambda-function"  # Specify the name for your Lambda function
+  handler       = "index.handler"
+  runtime       = "nodejs14.x"
+  # Add your Lambda function code here
+
+  # IAM role for Lambda execution
+  role = aws_iam_role.lambda_role.arn
+}
+
+# Create an Amazon RDS instance
+resource "aws_db_instance" "example_rds" {
+  allocated_storage    = 20       # Specify the allocated storage for your RDS instance
+  engine              = "mysql"  # Specify the database engine
+  instance_class      = "db.t2.micro"  # Specify the instance class
+  name                = "example-rds-instance"  # Specify the name for your RDS instance
+  username            = "admin"  # Specify the master username for your RDS instance
+  password            = "password"  # Specify the master password for your RDS instance
+
+  # Specify the VPC security group to associate with the RDS instance
+  vpc_security_group_ids = [aws_security_group.example_security_group.id]
+
+  # Specify the subnet group for the RDS instance
+  subnet_group_name = aws_db_subnet_group.example_subnet_group.name
+}
+
+# Create an Amazon VPC
+resource "aws_vpc" "example_vpc" {
+  cidr_block = "10.0.0.0/16"  # Specify the CIDR block for your VPC
+
+  tags = {
+    Name = "ExampleVPC"  # Specify a name tag for your VPC
+  }
+}
+
+# Create an AWS IAM role for Lambda execution
+resource "aws_iam_role" "lambda_role" {
+  name = "example-lambda-role"  # Specify the name for your IAM role
+
+  assume_role_policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "lambda.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    }
+  ]
+}
+EOF
+}
+
+# Create an Amazon CloudWatch metric alarm
+resource "aws_cloudwatch_metric_alarm" "example_alarm" {
+  alarm_name          = "example-cloudwatch-alarm"  # Specify the name for your CloudWatch alarm
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 2
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = 300
+  statistic           = "Average"
+  threshold           = 90
+  alarm_description   = "This alarm is triggered when CPU utilization is greater than or equal to 90%."
+  alarm_actions       = ["arn:aws:sns:us-east-1:123456789012:example-sns-topic"]  # Specify the ARN of the SNS topic to notify
+}
